@@ -1,0 +1,67 @@
+# .NET Build Outputs
+bin/
+obj/
+out/
+*.dll
+*.exe
+*.pdb
+
+# User-specific files
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Visual Studio
+.vs/
+.vscode/
+
+# NuGet Packages
+packages/
+*.nupkg
+*.snupkg
+
+# Build results
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+
+# Test Results
+TestResults/
+[Tt]est[Rr]esult*/
+*.trx
+*.coverage
+
+# Workshop artifacts - keep the folders but ignore DLLs/EXEs inside
+artifacts/**/*.dll
+artifacts/**/*.exe
+artifacts/**/*.pdb
+artifacts/**/*.so
+artifacts/**/*.dylib
+
+# OS files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Temporary files
+*.tmp
+*.log
+*.swp
+*.swo
+*~
+
+# Environment files
+.env
+.env.local
+*.env
+
+# IDE files
+*.iml
+.idea/
+
+# Docker
+.dockerignore

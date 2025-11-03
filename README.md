@@ -1,19 +1,58 @@
-# .NET 8 → .NET 10 (LTS → LTS) Upgrade Lab  
-**Focus:** Performance, reliability, and maintainability for enterprise retail systems (Meijer Edition)
+# .NET 8 → .NET 10 (LTS → LTS) Performance Lab Workshop  
+**Duration**: 2 hours | **Level**: Intermediate | **Focus**: LTS-to-LTS Performance Improvements  
+**Status**: 🚧 MVP Complete (Module 0 + Module 1) - 25 minutes runnable
 
----
+## Welcome! 👋
 
-## 🎯 Workshop Goals
+This hands-on workshop compares **.NET 8** and **.NET 10** LTS releases using realistic retail scenarios. You'll measure real performance improvements and learn when to migrate your applications.
 
-This 2-hour, hands-on lab compares **.NET 8** and **.NET 10** side by side.  
-You’ll see, measure, and reason about the improvements that matter most in large retail environments:
+### What You'll Learn
 
-- **Faster APIs & lower cloud spend** — runtime, JIT, and AOT upgrades.
-- **Stronger reliability & security** — hardened web surface, passkey auth, diagnostics.
-- **Simpler large-scale codebases** — new C# 14 language features for maintainability.
-- **More efficient data access** — EF Core 10 query and update enhancements.
+- 🚀 **Runtime Performance**: Measure cold-start improvements (80%+ faster with Native AOT)
+- ⚡ **API Throughput**: See throughput and latency gains (15%+ improvement)
+- 💻 **Modern C#**: Explore C# 14 features that reduce boilerplate
+- 📊 **Data Layer**: Optimize EF Core 10 JSON operations (30%+ faster)
+- 🐳 **Containers**: Compare Docker image sizes (10%+ smaller)
+- 📋 **Migration Planning**: Prioritize your services with a decision matrix
 
-Each module includes runnable code and simple scripts to collect real numbers.
+### Prerequisites
+
+- Windows 10/11 with PowerShell 7+
+- .NET 8 SDK (required) - .NET 9/10 SDK (optional, for full comparison)
+- Basic C# knowledge
+- Optional: Docker Desktop, bombardier/wrk for load testing
+
+### Quick Start (MVP - 25 minutes)
+
+1. **Check Prerequisites**:
+   ```powershell
+   .\shared\Scripts\check-prerequisites.ps1
+   ```
+
+2. **Run the MVP Workshop**:
+   ```powershell
+   # See QUICKSTART-MVP.md for detailed instructions
+   cd modules\module0-warmup
+   Get-Content README.md | more  # 5 min read
+   
+   cd ..\module1-runtime
+   dotnet build                   # 3 min
+   .\measure-coldstart.ps1        # 5 min
+   .\measure-size.ps1             # 2 min
+   .\measure-memory.ps1           # 8 min (optional)
+   ```
+
+3. **Check Implementation Status**:
+   ```powershell
+   Get-Content IMPLEMENTATION-STATUS.md | more
+   # See what's complete and what's pending
+   ```
+
+### Current Status
+
+- ✅ **Module 0**: Workshop Context (complete)
+- ✅ **Module 1**: Runtime Performance (complete, .NET 8 only)
+- ⏳ **Modules 2-7**: Coming soon (see IMPLEMENTATION-STATUS.md)
 
 ---
 

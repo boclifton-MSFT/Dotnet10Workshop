@@ -18,6 +18,12 @@
   - Tested independently
   - Deployed independently
   - Demonstrated to users independently
+  
+  DOTNET10WORKSHOP SPECIFIC:
+  - Each user story must be runnable within 5 minutes (Educational Clarity)
+  - Include .NET 8 vs .NET 10 comparison for each scenario (Fair Comparison)
+  - Tie to retail/enterprise business value (Enterprise Context)
+  - Time allocation must fit within 2-hour workshop structure (Incremental Complexity)
 -->
 
 ### User Story 1 - [Brief Title] (Priority: P1)

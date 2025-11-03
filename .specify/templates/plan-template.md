@@ -31,7 +31,40 @@
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-[Gates determined based on constitution file]
+**Educational Clarity Compliance:**
+- [ ] Module runnable within 5 minutes of checkout
+- [ ] Performance measurements scripted and reproducible
+- [ ] Retail scenarios relatable to enterprise operations
+- [ ] Prerequisites documented
+
+**Fair Comparison Compliance:**
+- [ ] Identical scenarios for .NET 8 and .NET 10
+- [ ] Measurement scripts run both versions under identical conditions
+- [ ] Trade-offs explicitly documented
+- [ ] Results reproducible on standard hardware (4-core, 8GB RAM)
+
+**Production Patterns Compliance:**
+- [ ] Code follows enterprise standards (logging, error handling, health checks)
+- [ ] Security practices implemented (no hardcoded secrets, input validation)
+- [ ] Performance thresholds met (<100ms p95 latency, cold-start optimized)
+- [ ] Realistic data volumes and concurrency
+
+**Incremental Complexity Compliance:**
+- [ ] Time allocation documented and realistic
+- [ ] Module works independently with isolated setup
+- [ ] Complexity progression clear (entry/exit criteria)
+
+**Enterprise Context Compliance:**
+- [ ] Business value explicitly stated
+- [ ] Large-scale impact documented
+- [ ] Cloud cost implications calculated
+- [ ] Observability demonstrated
+- [ ] Migration guidance provided
+
+**Technical Standards Compliance:**
+- [ ] Framework-Dependent (FX) and Native AOT builds where applicable
+- [ ] Cross-platform scripts (PowerShell + bash)
+- [ ] Performance measurements capture: startup, latency (p50/p95/p99), memory, container size, RPS
 
 ## Project Structure
 
