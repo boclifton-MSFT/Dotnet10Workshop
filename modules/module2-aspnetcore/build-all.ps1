@@ -16,8 +16,8 @@ $builds = @(
         OutputDir = "../../artifacts/prom8-fx"
     },
     @{
-        Name = ".NET 9 (With Caching/Rate Limiting)"
-        TargetFramework = "net9.0"
+        Name = ".NET 10 (With Caching/Rate Limiting)"
+        TargetFramework = "net10.0"
         OutputDir = "../../artifacts/prom10-fx"
     }
 )

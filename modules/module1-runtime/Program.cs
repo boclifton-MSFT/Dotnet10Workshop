@@ -1,18 +1,40 @@
 using Workshop.DomainModels;
 using Workshop.PricingService;
+using System.Text.Json.Serialization;
+#if NET10_0_OR_GREATER
+using Microsoft.AspNetCore.OpenApi;
+#endif
 
 var builder = WebApplication.CreateBuilder(args);
+
+#if NET10_0_OR_GREATER
+// Add OpenAPI support (built-in to .NET 10)
+builder.Services.AddOpenApi();
+#endif
 
 // Configure JSON serialization for minimal APIs
 builder.Services.ConfigureHttpJsonOptions(options =>
 {
     options.SerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
+    // Register source-generated serialization context for Native AOT support
+    options.SerializerOptions.TypeInfoResolver = PricingSerializerContext.Default;
 });
 
 var app = builder.Build();
 
+#if NET10_0_OR_GREATER
+// Map OpenAPI endpoint (only in Development, only in .NET 10+)
+if (app.Environment.IsDevelopment())
+{
+    app.MapOpenApi();
+}
+#endif
+
 // Health check endpoint
-app.MapGet("/health", () => Results.Ok(new { status = "Healthy", timestamp = DateTime.UtcNow }));
+app.MapGet("/health", () => Results.Ok(new HealthResponse("Healthy", DateTime.UtcNow)));
+
+// Simple root endpoint
+app.MapGet("/", () => "PricingService is running.");
 
 // Pricing calculation endpoint
 app.MapPost("/api/pricing/calculate", (PricingRequest request) =>
@@ -26,6 +48,11 @@ app.Run();
 
 namespace Workshop.PricingService
 {
+    /// <summary>
+    /// Health check response.
+    /// </summary>
+    public record HealthResponse(string Status, DateTime Timestamp);
+
     /// <summary>
     /// Request model for pricing calculation.
     /// </summary>
@@ -136,5 +163,17 @@ namespace Workshop.PricingService
                 Total: total
             );
         }
+    }
+
+    /// <summary>
+    /// JSON serialization context for Native AOT support.
+    /// Source generation ensures JSON serialization works in Native AOT builds.
+    /// </summary>
+    [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
+    [JsonSerializable(typeof(HealthResponse))]
+    [JsonSerializable(typeof(PricingRequest))]
+    [JsonSerializable(typeof(PricingResponse))]
+    internal partial class PricingSerializerContext : JsonSerializerContext
+    {
     }
 }

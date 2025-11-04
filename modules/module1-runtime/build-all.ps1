@@ -8,6 +8,16 @@ Write-Host "Building PricingService (All Variants)" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
 
+# First, restore packages for all target frameworks
+Write-Host "Restoring packages for all frameworks..." -ForegroundColor Yellow
+& dotnet restore
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "❌ Restore failed!" -ForegroundColor Red
+    exit 1
+}
+Write-Host "✅ Restore completed" -ForegroundColor Green
+Write-Host ""
+
 # Define build configurations
 $builds = @(
     @{
@@ -24,13 +34,13 @@ $builds = @(
     },
     @{
         Name = ".NET 10 Framework-Dependent"
-        TargetFramework = "net9.0"  # Using .NET 9 as placeholder for .NET 10
+        TargetFramework = "net10.0"  # Using .NET 9 as placeholder for .NET 10
         PublishAot = $false
         OutputDir = "..\..\artifacts\pub10-fx"
     },
     @{
         Name = ".NET 10 Native AOT"
-        TargetFramework = "net9.0"  # Using .NET 9 as placeholder for .NET 10
+        TargetFramework = "net10.0"  # Using .NET 9 as placeholder for .NET 10
         PublishAot = $true
         OutputDir = "..\..\artifacts\pub10-aot"
     }
@@ -51,8 +61,8 @@ foreach ($build in $builds) {
     )
     
     if ($build.PublishAot) {
-        $publishArgs += @("-p:PublishAot=true")
-        Write-Host "  AOT: Enabled (this may take 3-5 minutes)" -ForegroundColor Magenta
+        $publishArgs += @("-p:PublishAot=true", "-p:OptimizationPreference=Size")
+        Write-Host "  AOT: Enabled with Size Optimization (this may take 3-5 minutes)" -ForegroundColor Magenta
     }
     
     # Execute build

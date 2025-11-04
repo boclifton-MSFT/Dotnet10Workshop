@@ -1,0 +1,15 @@
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
+
+LABEL description="PromotionsAPI running on .NET 10" \
+      maintainer="workshop@example.com"
+
+WORKDIR /app
+
+# Copy pre-built framework-dependent binary
+COPY ../artifacts/prom10-fx/ .
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD dotnet PromotionsAPI &1 | grep -q "healthy" || exit 1
+
+ENTRYPOINT ["./PromotionsAPI"]

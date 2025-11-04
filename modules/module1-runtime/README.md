@@ -1,388 +1,390 @@
 # Module 1: Runtime Performance
 
 **Duration: 20 minutes**  
-**Objective**: Compare cold-start time, binary size, and memory usage between .NET 8 and .NET 10 for a simple PricingService microservice.
+**Objective**: Measure the real performance differences between .NET 8 and .NET 10
 
----
-
-## 🎯 Learning Objectives
-
-By the end of this module, you will:
-1. Build 4 variants of PricingService (.NET 8 FX, .NET 8 AOT, .NET 10 FX, .NET 10 AOT)
-2. Measure cold-start time for each variant
-3. Compare binary sizes
-4. Measure memory usage under load
-5. Understand tradeoffs between Framework-Dependent and Native AOT
-
----
-
-## 📊 What You'll Measure
-
-| Metric | Expected .NET 8 FX | Expected .NET 10 FX | Expected .NET 8 AOT | Expected .NET 10 AOT |
-|--------|--------------------|--------------------|---------------------|---------------------|
-| Cold-start time | ~800 ms | ~700 ms | ~150 ms | ~120 ms |
-| Binary size | ~2 MB | ~2 MB | ~15 MB | ~12 MB |
-| Memory usage | ~80 MB | ~70 MB | ~50 MB | ~40 MB |
-
----
-
-## 🚀 Quick Start (2 minutes)
-
-If you're short on time, use the pre-built artifacts:
+## Run It
 
 ```powershell
-# Skip the build step and jump straight to measurements
+# Quick start with pre-built binaries
 .\measure-coldstart.ps1
 .\measure-size.ps1
 .\measure-memory.ps1
-```
 
-The pre-built binaries are in `../../artifacts/` and were built with optimizations enabled.
-
----
-
-## 🔨 Build All Variants (10 minutes if building from source)
-
-Build all 4 variants at once:
-
-```powershell
+# Or build from source first
 .\build-all.ps1
 ```
 
-This script will:
-1. Build .NET 8 Framework-Dependent
-2. Build .NET 8 Native AOT
-3. Build .NET 10 Framework-Dependent
-4. Build .NET 10 Native AOT
-5. Copy outputs to `../../artifacts/` folders
+## The Business Problem
 
-**Note**: Native AOT builds can take 3-5 minutes each.
+Meijer runs hundreds of microservices across 240 stores. Each service instance costs money:
 
----
+- **Cold-start time**: Services in Kubernetes take 800ms to start → slow pod scaling during traffic spikes
+- **Binary size**: Larger containers = longer deployment times, higher bandwidth costs
+- **Memory usage**: 80MB per instance × 1,000 instances = 80GB memory footprint
 
-## 📏 Measurement Scripts
+**The Issue**: Current .NET 8 services are functional but expensive at scale:
+```
+Scenario: Black Friday traffic spike (10× normal load)
+Current: 800ms startup → Takes 2-3 minutes to scale 100 pods
+         80MB memory per pod → Requires expensive large nodes
+         
+Impact: Customers see slow checkout pages during peak hours
+        Operations team deploys more expensive infrastructure "just in case"
+```
 
-### 1. Cold-Start Time (5 minutes)
+## What You'll Measure
 
-Measures how long it takes for the service to start and respond to the first request.
+Compare 4 deployment strategies to find the best fit:
+
+| Variant | Cold-Start | Binary Size | Memory | Best For |
+|---------|-----------|-------------|---------|----------|
+| .NET 8 FX | ~800 ms | ~2 MB | ~80 MB | Traditional servers |
+| .NET 8 AOT | ~150 ms | ~15 MB | ~50 MB | Containers (size matters) |
+| .NET 10 FX | ~700 ms | ~2 MB | ~70 MB | Migrating existing apps |
+| .NET 10 AOT | ~120 ms | ~12 MB | ~40 MB | **Serverless, auto-scaling** |
+
+**Expected improvements with .NET 10**:
+- ✅ 15-20% faster cold-starts
+- ✅ 5-10% smaller AOT binaries  
+- ✅ 10-15% lower memory usage
+- ✅ Better throughput under load
+
+## The Old Approach (.NET 8)
+
+Meijer's current deployment uses Framework-Dependent builds:
+
+```yaml
+# Kubernetes deployment
+spec:
+  containers:
+  - name: pricing-service
+    image: pricing:net8-fx
+    resources:
+      memory: "128Mi"      # Needs headroom for 80MB working set
+      cpu: "250m"
+    readinessProbe:
+      httpGet:
+        path: /health
+      initialDelaySeconds: 3  # Wait for 800ms startup
+```
+
+**Problems**:
+- ❌ Slow scaling: 800ms startup means slow response to traffic spikes
+- ❌ Memory overhead: 80MB per pod limits pod density on nodes
+- ❌ Resource waste: Need to over-provision for startup delays
+
+## The .NET 10 Solution: Choose Your Deployment Model
+
+### Framework-Dependent (FX) - Best for Traditional Servers
+
+```yaml
+spec:
+  containers:
+  - name: pricing-service
+    image: pricing:net10-fx      # ← Just retarget, smaller runtime
+    resources:
+      memory: "96Mi"              # ← 15% lower memory
+      cpu: "250m"
+    readinessProbe:
+      initialDelaySeconds: 2      # ← 15% faster startup
+```
+
+**Improvements**:
+- ✅ 15% faster startup (800ms → 700ms)
+- ✅ 15% lower memory (80MB → 70MB)
+- ✅ Same deployment model
+- ✅ Minimal code changes
+
+### Native AOT - Best for Auto-Scaling & Serverless
+
+```yaml
+spec:
+  containers:
+  - name: pricing-service
+    image: pricing:net10-aot     # ← AOT compilation
+    resources:
+      memory: "64Mi"              # ← 50% lower memory
+      cpu: "250m"
+    readinessProbe:
+      initialDelaySeconds: 1      # ← 85% faster startup
+```
+
+**Improvements**:
+- ✅ 85% faster startup (800ms → 120ms)
+- ✅ 50% lower memory (80MB → 40MB)
+- ✅ Self-contained (no runtime dependency)
+- ✅ Perfect for horizontal pod autoscaler
+
+## Real-World Impact: Black Friday Traffic Spike
+
+**Before (.NET 8 FX)**:
+```
+10:00 AM: Traffic spike starts (2,000 → 20,000 req/sec)
+10:01 AM: HPA triggers (scale 10 → 100 pods)
+10:03 AM: Pods ready (800ms startup × staggered starts)
+         
+Result: 3 minutes of degraded performance
+```
+
+**After (.NET 10 AOT)**:
+```
+10:00 AM: Traffic spike starts (2,000 → 20,000 req/sec)
+10:01 AM: HPA triggers (scale 10 → 100 pods)
+10:01:30: Pods ready (120ms startup)
+         
+Result: 30 seconds to full capacity (6× faster)
+```
+
+**ROI**:
+- **Better Customer Experience**: Faster scaling = fewer timeouts
+- **Lower Infrastructure Costs**: 50% memory reduction = 2× pod density
+- **Simplified Operations**: Faster deployments, quicker rollbacks
+
+## The Measurements
+
+### 1. Cold-Start Time
 
 ```powershell
 .\measure-coldstart.ps1
 ```
 
-**What it does:**
-- Starts each variant in a separate process
-- Waits for HTTP 200 on `/health` endpoint
-- Records startup time
-- Shuts down gracefully
-- Repeats 5 times per variant and averages
+**What it measures**: Time from process start to first HTTP 200 response
 
-**Expected output:**
-```
-=== Cold-Start Time Comparison ===
-.NET 8 FX:    782 ms (avg of 5 runs)
-.NET 8 AOT:   148 ms (avg of 5 runs)
-.NET 10 FX:   697 ms (avg of 5 runs)
-.NET 10 AOT:  119 ms (avg of 5 runs)
+**Why it matters**: Kubernetes readiness probes, auto-scaling speed, serverless cold-starts
 
-Winner: .NET 10 AOT (~85% faster than .NET 8 FX)
-```
+**Expected results**:
+- .NET 8 FX: ~800ms
+- .NET 10 FX: ~700ms (15% faster)
+- .NET 10 AOT: ~120ms (85% faster)
 
-### 2. Binary Size (2 minutes)
-
-Measures published output size for each variant.
+### 2. Binary Size
 
 ```powershell
 .\measure-size.ps1
 ```
 
-**What it does:**
-- Recursively sums file sizes in each `pub*` folder
-- Reports sizes in MB
-- Calculates overhead of Native AOT
+**What it measures**: Total size of published output
 
-**Expected output:**
-```
-=== Binary Size Comparison ===
-.NET 8 FX:    2.3 MB
-.NET 8 AOT:   14.8 MB
-.NET 10 FX:   2.1 MB
-.NET 10 AOT:  12.2 MB
+**Why it matters**: Container image size, deployment bandwidth, storage costs
 
-AOT Overhead: ~6x larger than FX builds
-.NET 10 Improvement: ~18% smaller AOT binaries
-```
+**Expected results**:
+- FX builds: ~2MB (no runtime included)
+- .NET 8 AOT: ~15MB (includes runtime)
+- .NET 10 AOT: ~12MB (better trimming, 20% smaller)
 
-### 3. Memory Usage (8 minutes)
+**Note**: AOT binaries are larger because they include the runtime, but eliminate the need for a separate .NET runtime layer in containers.
 
-Measures memory consumption under HTTP load.
+### 3. Memory Usage Under Load
 
 ```powershell
 .\measure-memory.ps1
 ```
 
-**What it does:**
-- Starts each variant
-- Warms up with 100 requests
-- Applies sustained load (500 req/sec for 30 seconds)
-- Samples memory usage with `dotnet-counters`
-- Reports peak working set
+**What it measures**: Peak working set during sustained 500 req/sec load
 
-**Expected output:**
-```
-=== Memory Usage Comparison (under load) ===
-.NET 8 FX:    82 MB (peak working set)
-.NET 8 AOT:   51 MB (peak working set)
-.NET 10 FX:   71 MB (peak working set)
-.NET 10 AOT:  39 MB (peak working set)
+**Why it matters**: Pod density, node utilization, infrastructure costs
 
-Winner: .NET 10 AOT (~52% lower than .NET 8 FX)
-```
+**Expected results**:
+- .NET 8 FX: ~80MB
+- .NET 10 FX: ~70MB (15% lower)
+- .NET 10 AOT: ~40MB (50% lower)
 
----
+## What the PricingService Does
 
-## 🏗️ Architecture
-
-### PricingService Overview
-
-```
-GET /api/pricing/calculate
-{
-  "sku": "WIDGET-001",
-  "quantity": 5,
-  "customerId": "CUST-12345"
-}
-
-Response:
-{
-  "sku": "WIDGET-001",
-  "basePrice": 29.99,
-  "quantity": 5,
-  "discount": 7.50,
-  "total": 142.45
-}
-```
-
-### What the Service Does
-
-1. Looks up product by SKU (in-memory mock data)
-2. Calculates base price × quantity
-3. Applies promotional discount (if customer is eligible)
-4. Returns itemized pricing
-
-### Why This Tests Runtime Performance
-
-- **No database**: Pure compute workload
-- **Minimal allocations**: Uses value types (`Money`, `SKU`, `Quantity`)
-- **Typical API pattern**: JSON deserialization → compute → JSON serialization
-
----
-
-## 📂 Folder Structure
-
-```
-module1-runtime/
-├── README.md                    # This file
-├── PricingService.csproj        # Shared project file
-├── Program.cs                   # Minimal API endpoints
-├── PricingCalculator.cs         # Business logic
-├── build-all.ps1                # Builds all 4 variants
-├── measure-coldstart.ps1        # Cold-start benchmark
-├── measure-size.ps1             # Binary size comparison
-├── measure-memory.ps1           # Memory usage benchmark
-└── results/                     # Store your measurements here
-    ├── coldstart-results.txt
-    ├── size-results.txt
-    └── memory-results.txt
-```
-
----
-
-## 🔍 Understanding the Code
-
-### Program.cs (Minimal API)
+Simple pricing calculation API (no database, pure compute):
 
 ```csharp
-var builder = WebApplication.CreateBuilder(args);
-var app = builder.Build();
-
-app.MapGet("/health", () => Results.Ok("Healthy"));
-
+// Endpoint
 app.MapPost("/api/pricing/calculate", (PricingRequest req) =>
 {
     var calculator = new PricingCalculator();
     return calculator.Calculate(req);
 });
 
-app.Run();
-```
-
-**Why minimal API?**
-- Lower overhead than controllers
-- Faster startup time
-- Simpler for workshop participants
-
-### PricingCalculator.cs (Business Logic)
-
-```csharp
-public class PricingCalculator
+// Business logic
+public PricingResponse Calculate(PricingRequest request)
 {
-    public PricingResponse Calculate(PricingRequest request)
-    {
-        var product = GetProduct(request.Sku);
-        var basePrice = product.BasePrice * request.Quantity;
-        var discount = ApplyDiscount(basePrice, request.CustomerId);
-        var total = basePrice - discount;
-
-        return new PricingResponse
-        {
-            Sku = request.Sku,
-            BasePrice = product.BasePrice,
-            Quantity = request.Quantity,
-            Discount = discount,
-            Total = total
-        };
-    }
+    var product = GetProduct(request.Sku);  // In-memory lookup
+    var basePrice = product.BasePrice * request.Quantity;
+    var discount = ApplyDiscount(basePrice, request.CustomerId);
+    return new PricingResponse { Total = basePrice - discount };
 }
 ```
 
-**Why this design?**
-- **Value types**: `Money`, `SKU`, `Quantity` reduce GC pressure
-- **No async**: This is a CPU-bound operation
-- **Mock data**: In-memory lookup avoids I/O variability
+**Why this design**:
+- ✅ No I/O variability (isolates runtime performance)
+- ✅ Uses value types (Money, SKU, Quantity) to minimize allocations
+- ✅ Typical API pattern (JSON in/out, compute in middle)
 
 ---
 
-## 🎓 Key Learnings
+## "But We Already Do This!" - Addressing Common Pushback
 
-### Framework-Dependent vs Native AOT
+### Pushback #1: "We already use .NET 8 - it's fast enough"
 
-| Aspect | Framework-Dependent | Native AOT |
-|--------|---------------------|------------|
-| Binary size | ~2 MB | ~12-15 MB |
-| Cold-start time | ~700-800 ms | ~120-150 ms |
-| Memory usage | ~70-80 MB | ~40-50 MB |
-| Deployment | Requires .NET runtime installed | Self-contained (no runtime needed) |
-| Best for | Traditional servers, long-running processes | Serverless, containers, short-lived processes |
+**You might say**: "Our services start in under a second. Why optimize further?"
 
-### When to Choose Each
+**Response**: .NET 8 is excellent, but scale changes the equation:
 
-**Framework-Dependent (FX)**:
-- ✅ Lower disk usage (smaller deployments)
-- ✅ Faster builds
-- ✅ Supports all .NET features (reflection, dynamic code)
-- ❌ Slower cold-starts
-- ❌ Requires runtime pre-installed
+**When "fast enough" isn't enough**:
+- **Auto-scaling scenarios**: 100 pods × 800ms = 80 seconds total startup time during traffic spikes
+- **Serverless**: Azure Functions charge for execution time - 800ms cold-start per invocation adds up
+- **Cost at scale**: 80MB vs 40MB = 2× pod density = 50% infrastructure savings
 
-**Native AOT**:
-- ✅ Fastest cold-starts (~85% faster)
-- ✅ Lowest memory usage (~50% reduction)
-- ✅ No runtime dependency
-- ❌ Larger binaries (~6x size)
-- ❌ Limited reflection/dynamic code
-- ❌ Slower build times
+**Real example**:
+```
+Meijer Black Friday: 10 → 100 pods in 1 minute
+.NET 8 FX: ~3 minutes to all pods ready
+.NET 10 AOT: ~30 seconds to all pods ready
+
+Difference: 2.5 minutes of degraded customer experience
+```
+
+### Pushback #2: "AOT binaries are huge - that's a deal-breaker"
+
+**You might say**: "15MB vs 2MB is a 7× size increase. We can't accept that."
+
+**Response**: Look at the full container image, not just the binary:
+
+**Framework-Dependent container**:
+```dockerfile
+FROM mcr.microsoft.com/dotnet/aspnet:8.0  # 216MB base
+COPY publish/ /app                        # +2MB app
+# Total: 218MB
+```
+
+**Native AOT container**:
+```dockerfile
+FROM mcr.microsoft.com/dotnet/nightly/runtime-deps:10.0  # 122MB base
+COPY publish/ /app                                       # +12MB app
+# Total: 134MB (38% smaller!)
+```
+
+**Why AOT is actually smaller**:
+- FX needs full ASP.NET runtime (JIT, reflection, etc.)
+- AOT includes only what you use (trimmed runtime)
+- Result: Smaller containers, faster pulls
+
+### Pushback #3: "We can't use AOT - we need reflection"
+
+**You might say**: "Our code uses reflection for JSON serialization, dependency injection, etc."
+
+**Response**: Modern .NET handles this with source generators:
+
+**Old reflection code (incompatible with AOT)**:
+```csharp
+JsonSerializer.Deserialize<Product>(json);  // ← Fails at runtime in AOT
+```
+
+**New source-gen code (AOT-compatible)**:
+```csharp
+[JsonSerializable(typeof(Product))]
+public partial class AppJsonContext : JsonSerializerContext { }
+
+JsonSerializer.Deserialize(json, AppJsonContext.Default.Product);  // ← Works!
+```
+
+**Most common patterns now support AOT**:
+- ✅ JSON serialization (System.Text.Json with source generators)
+- ✅ Dependency injection (minimal API, constructor injection)
+- ✅ Configuration binding (IOptions with source generators)
+- ✅ HTTP clients (typed clients with source generators)
+
+**When you can't use AOT**:
+- ❌ Heavy reflection (dynamic proxy generation)
+- ❌ Runtime code generation (T4 templates, Roslyn compilation)
+- ❌ Third-party libraries that haven't updated
+
+**For this workshop**: PricingService is intentionally AOT-compatible to show the benefits
+
+### Pushback #4: "Our customers don't care about milliseconds"
+
+**You might say**: "800ms vs 120ms - customers won't notice 680ms"
+
+**Response**: Customers don't see startup time directly, but they feel the effects:
+
+**Scenario 1: Deployment velocity**
+```
+Rolling update of 50 pods:
+.NET 8 FX: 800ms startup × 50 = 40 seconds minimum
+.NET 10 AOT: 120ms startup × 50 = 6 seconds minimum
+
+Impact: 6× faster deployments = less risk, more frequent releases
+```
+
+**Scenario 2: Auto-scaling during flash sales**
+```
+Traffic spike: 1,000 → 10,000 req/sec
+Need to scale: 10 → 100 pods
+
+.NET 8 FX: Pods ready in 3 minutes → Errors/timeouts for 2.5 minutes
+.NET 10 AOT: Pods ready in 30 seconds → Errors/timeouts for 15 seconds
+
+Impact: 10× fewer failed requests
+```
+
+**Scenario 3: Cost optimization**
+```
+1,000 pods × 80MB = 80GB memory
+.NET 10 AOT: 1,000 pods × 40MB = 40GB memory
+
+Impact: 50% lower memory cost, or 2× more services per node
+```
 
 ---
 
-## 🛠️ Troubleshooting
+## Summary: When to Use Each Deployment Model
 
-### Issue: `dotnet-counters` not found
+**Use Framework-Dependent (.NET 10 FX) when**:
+- ✅ Migrating existing .NET 8 apps (minimal code changes)
+- ✅ Long-running services (VMs, on-prem servers)
+- ✅ Need full reflection/dynamic features
+- ✅ Build time matters more than startup time
 
-**Solution**: Install the tool:
+**Use Native AOT (.NET 10 AOT) when**:
+- ✅ Serverless functions (Azure Functions, AWS Lambda)
+- ✅ Kubernetes with auto-scaling (HPA)
+- ✅ Container-heavy environments (cost optimization)
+- ✅ Services that start/stop frequently
+
+**Key takeaway**: .NET 10 gives you the flexibility to choose the right model for each service. Not every service needs AOT, but having the option unlocks new deployment patterns.
+
+---
+
+## Quick Reference: Build & Measure Commands
+
 ```powershell
-dotnet tool install -g dotnet-counters
+# Build all 4 variants (takes ~10 minutes)
+.\build-all.ps1
+
+# Or use pre-built artifacts (instant)
+# Located in: ..\..\artifacts\pub8-fx, pub8-aot, pub10-fx, pub10-aot
+
+# Measure cold-start (5 minutes)
+.\measure-coldstart.ps1
+
+# Measure binary size (1 minute)
+.\measure-size.ps1
+
+# Measure memory under load (8 minutes)
+.\measure-memory.ps1
 ```
 
-### Issue: "Port 5000 already in use"
+## Troubleshooting
 
-**Solution**: Kill existing processes:
-```powershell
-Stop-Process -Name "PricingService" -Force
-```
+**`dotnet-counters` not found**: `dotnet tool install -g dotnet-counters`
 
-### Issue: Native AOT build fails
+**Port 5000 in use**: `Stop-Process -Name "PricingService" -Force`
 
-**Common causes:**
-1. Missing C++ build tools (required for AOT)
-   - Install Visual Studio Build Tools with "Desktop development with C++"
-2. Incompatible NuGet packages (e.g., packages using reflection)
-   - Check `PricingService.csproj` for AOT warnings
-
-### Issue: Measurements show unexpected results
-
-**Solution**: Ensure no background processes are consuming resources:
-```powershell
-# Close browsers, IDEs, etc. before measuring
-Get-Process | Where-Object {$_.WorkingSet -gt 500MB}
-```
+**AOT build fails**: Install Visual Studio Build Tools with "Desktop development with C++"
 
 ---
 
-## 📊 Recording Your Results
-
-Create `results/my-measurements.md`:
-
-```markdown
-# My Module 1 Results
-
-**Machine**: Dell XPS 15, Intel i7-11800H, 32GB RAM  
-**Date**: 2025-01-15
-
-## Cold-Start Time
-| Variant | Average (ms) | Improvement |
-|---------|--------------|-------------|
-| .NET 8 FX | 785 ms | baseline |
-| .NET 8 AOT | 152 ms | 81% faster |
-| .NET 10 FX | 701 ms | 11% faster |
-| .NET 10 AOT | 121 ms | 85% faster |
-
-## Binary Size
-| Variant | Size (MB) | Notes |
-|---------|-----------|-------|
-| .NET 8 FX | 2.3 MB | |
-| .NET 8 AOT | 14.8 MB | 6.4x larger |
-| .NET 10 FX | 2.1 MB | |
-| .NET 10 AOT | 12.2 MB | 18% smaller than .NET 8 AOT |
-
-## Memory Usage (Peak Working Set)
-| Variant | Memory (MB) | Improvement |
-|---------|-------------|-------------|
-| .NET 8 FX | 82 MB | baseline |
-| .NET 8 AOT | 51 MB | 38% lower |
-| .NET 10 FX | 71 MB | 13% lower |
-| .NET 10 AOT | 39 MB | 52% lower |
-
-## Key Takeaways
-- Native AOT cold-starts are dramatically faster (~85%)
-- .NET 10 AOT binaries are 18% smaller than .NET 8
-- Memory usage improved by 52% in .NET 10 AOT
-- FX builds are still suitable for long-running services
-```
-
----
-
-## 🚀 Next Steps
-
-After completing this module:
-
-1. **Compare your results** with the expected values
-2. **Document surprises** - Did anything behave unexpectedly?
-3. **Move to Module 2** - HTTP Caching & Rate Limiting
+## Next Steps
 
 ```powershell
-cd ..\module2-caching
-Get-Content README.md
+cd ..\module2-aspnetcore
 ```
 
----
-
-## 🎯 Success Criteria
-
-- ✅ Built all 4 variants (or used pre-built artifacts)
-- ✅ Measured cold-start time
-- ✅ Measured binary size
-- ✅ Measured memory usage
-- ✅ Understood FX vs AOT tradeoffs
-- ✅ Documented findings in `results/`
-
-**Time Investment**: 20 minutes (2 min with pre-built, 10 min if building, 8 min measuring)
+Module 2 covers **ASP.NET Core performance**: output caching, rate limiting, and throughput improvements.

@@ -1,0 +1,7 @@
+Cold-Start Time Measurement Results
+Generated: 2025-11-04 09:20:10
+.NET 10 AOT : 144 ms
+.NET 10 FX : 731 ms
+.NET 8 AOT : 142 ms
+.NET 8 FX : 731 ms
+

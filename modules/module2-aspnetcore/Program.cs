@@ -18,15 +18,18 @@ builder.Services.AddOutputCache(options =>
     options.AddBasePolicy(builder => builder.Expire(TimeSpan.FromSeconds(10)));
 });
 
-builder.Services.AddRateLimiter(_ =>
+builder.Services.AddRateLimiter(options =>
 {
-    _.FixedWindowLimiter = new FixedWindowRateLimiterOptions
-    {
-        PermitLimit = 100,
-        Window = TimeSpan.FromSeconds(10),
-        QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
-        QueueLimit = 2
-    };
+    options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: context.User.Identity?.Name ?? context.Request.Headers.Host.ToString() ?? "anonymous",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 100,
+                Window = TimeSpan.FromSeconds(10),
+                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                QueueLimit = 2
+            }));
 });
 #endif
 

@@ -1,0 +1,8 @@
+Memory Usage Measurement Results (Under Load)
+Generated: 2025-11-04 09:23:27
+Load Tool: bombardier
+.NET 10 AOT : 42.2 MB (peak working set)
+.NET 10 FX : 72.3 MB (peak working set)
+.NET 8 AOT : 32.8 MB (peak working set)
+.NET 8 FX : 119.5 MB (peak working set)
+

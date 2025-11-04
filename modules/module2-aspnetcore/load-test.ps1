@@ -15,7 +15,8 @@ $ErrorActionPreference = "Stop"
 # Determine which variant to test
 $port = if ($Variant -eq "NET8") { 5100 } else { 5110 }
 $executable = if ($Variant -eq "NET8") { "../../artifacts/prom8-fx/PromotionsAPI.exe" } else { "../../artifacts/prom10-fx/PromotionsAPI.exe" }
-$resultsFile = "results/${Variant.ToLower()}-results.json"
+$variantLower = $Variant.ToLower()
+$resultsFile = "results/$variantLower-results.json"
 
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host "Load Test: $Variant" -ForegroundColor Cyan
