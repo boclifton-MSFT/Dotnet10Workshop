@@ -9,8 +9,8 @@ param(
 $ErrorActionPreference = "Stop"
 $results = @{
     Prerequisites = @()
-    Warnings = @()
-    Errors = @()
+    Warnings      = @()
+    Errors        = @()
 }
 
 function Test-DotNetSDK {
@@ -45,9 +45,9 @@ Write-Host ""
 $psVersion = $PSVersionTable.PSVersion
 if ($psVersion.Major -ge 5) {
     $results.Prerequisites += @{
-        Name = "PowerShell"
-        Status = "✅ PASS"
-        Version = "$($psVersion.Major).$($psVersion.Minor)"
+        Name     = "PowerShell"
+        Status   = "✅ PASS"
+        Version  = "$($psVersion.Major).$($psVersion.Minor)"
         Required = "5.1+"
     }
     Write-Host "✅ PowerShell $($psVersion.Major).$($psVersion.Minor) found" -ForegroundColor Green
@@ -61,9 +61,9 @@ else {
 if (Test-DotNetSDK "8.0") {
     $sdk8 = (& dotnet --list-sdks | Where-Object { $_ -like "8.0*" } | Select-Object -First 1) -split ' ' | Select-Object -First 1
     $results.Prerequisites += @{
-        Name = ".NET 8 SDK"
-        Status = "✅ PASS"
-        Version = $sdk8
+        Name     = ".NET 8 SDK"
+        Status   = "✅ PASS"
+        Version  = $sdk8
         Required = "8.0.x"
     }
     Write-Host "✅ .NET 8 SDK found: $sdk8" -ForegroundColor Green
@@ -78,9 +78,9 @@ else {
 if (Test-DotNetSDK "10.0") {
     $sdk10 = (& dotnet --list-sdks | Where-Object { $_ -like "10.0*" } | Select-Object -First 1) -split ' ' | Select-Object -First 1
     $results.Prerequisites += @{
-        Name = ".NET 10 SDK"
-        Status = "✅ PASS"
-        Version = $sdk10
+        Name     = ".NET 10 SDK"
+        Status   = "✅ PASS"
+        Version  = $sdk10
         Required = "10.0.x"
     }
     Write-Host "✅ .NET 10 SDK found: $sdk10" -ForegroundColor Green
@@ -95,9 +95,9 @@ else {
 if (Test-CommandExists "git") {
     $gitVersion = (& git --version) -replace 'git version ', ''
     $results.Prerequisites += @{
-        Name = "Git"
-        Status = "✅ PASS"
-        Version = $gitVersion
+        Name     = "Git"
+        Status   = "✅ PASS"
+        Version  = $gitVersion
         Required = "2.x+"
     }
     Write-Host "✅ Git found: $gitVersion" -ForegroundColor Green
@@ -112,9 +112,9 @@ if (Test-CommandExists "docker") {
     try {
         $dockerVersion = (& docker --version) -replace 'Docker version ', '' -replace ',.*', ''
         $results.Prerequisites += @{
-            Name = "Docker"
-            Status = "✅ PASS"
-            Version = $dockerVersion
+            Name     = "Docker"
+            Status   = "✅ PASS"
+            Version  = $dockerVersion
             Required = "20.x+ (optional)"
         }
         Write-Host "✅ Docker found: $dockerVersion (Module 5 available)" -ForegroundColor Green
@@ -134,9 +134,9 @@ $loadTestTool = $null
 if (Test-CommandExists "bombardier") {
     $loadTestTool = "bombardier"
     $results.Prerequisites += @{
-        Name = "Load Testing Tool"
-        Status = "✅ PASS"
-        Version = "bombardier"
+        Name     = "Load Testing Tool"
+        Status   = "✅ PASS"
+        Version  = "bombardier"
         Required = "optional"
     }
     Write-Host "✅ bombardier found (Module 2 load testing available)" -ForegroundColor Green
@@ -144,9 +144,9 @@ if (Test-CommandExists "bombardier") {
 elseif (Test-CommandExists "wrk") {
     $loadTestTool = "wrk"
     $results.Prerequisites += @{
-        Name = "Load Testing Tool"
-        Status = "✅ PASS"
-        Version = "wrk"
+        Name     = "Load Testing Tool"
+        Status   = "✅ PASS"
+        Version  = "wrk"
         Required = "optional"
     }
     Write-Host "✅ wrk found (Module 2 load testing available)" -ForegroundColor Green
@@ -197,7 +197,8 @@ if ($warningCount -gt 0 -and $errorCount -eq 0) {
     Write-Host ""
     Write-Host "Optional items missing (workshop can proceed):" -ForegroundColor Cyan
     foreach ($warning in $results.Warnings) {
-        Write-Host "  - $warning" -ForegroundColor Yellow
+        Write-Host '⚠️  ' -NoNewline -ForegroundColor Yellow
+        Write-Host "- $warning" -ForegroundColor Yellow    
     }
 }
 
