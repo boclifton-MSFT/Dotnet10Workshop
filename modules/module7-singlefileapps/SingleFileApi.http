@@ -1,0 +1,88 @@
+### Variables
+@baseUrl = http://localhost:5000
+@contentType = application/json
+
+###############################################
+# Todo API Tests
+###############################################
+
+### 1. GET all todos (should be empty initially)
+GET {{baseUrl}}/todos
+
+### 2. POST - Create first todo
+POST {{baseUrl}}/todos
+Content-Type: {{contentType}}
+
+{
+  "title": "Learn .NET 10 Single File Apps",
+  "isComplete": false
+}
+
+### 3. POST - Create second todo
+POST {{baseUrl}}/todos
+Content-Type: {{contentType}}
+
+{
+  "title": "Build a minimal API with EF Core",
+  "isComplete": false
+}
+
+### 4. POST - Create third todo
+POST {{baseUrl}}/todos
+Content-Type: {{contentType}}
+
+{
+  "title": "Test the API endpoints",
+  "isComplete": true
+}
+
+### 5. GET all todos (should now have items)
+GET {{baseUrl}}/todos
+
+### 6. GET todo by id (replace {id} with actual id, typically 1)
+GET {{baseUrl}}/todos/1
+
+### 7. GET todo by id (test with id 2)
+GET {{baseUrl}}/todos/2
+
+### 8. GET todo by id - Not Found (id 999)
+GET {{baseUrl}}/todos/999
+
+### 9. PUT - Update todo (mark as complete)
+PUT {{baseUrl}}/todos/1
+Content-Type: {{contentType}}
+
+{
+  "title": "Learn .NET 10 Single File Apps - UPDATED",
+  "isComplete": true
+}
+
+### 10. PUT - Update todo (change title)
+PUT {{baseUrl}}/todos/2
+Content-Type: {{contentType}}
+
+{
+  "title": "Build a COMPLETE minimal API with EF Core and SQLite",
+  "isComplete": true
+}
+
+### 11. PUT - Update non-existent todo (should return 404)
+PUT {{baseUrl}}/todos/999
+Content-Type: {{contentType}}
+
+{
+  "title": "This should not work",
+  "isComplete": false
+}
+
+### 12. GET all todos (verify updates)
+GET {{baseUrl}}/todos
+
+### 13. DELETE todo by id
+DELETE {{baseUrl}}/todos/3
+
+### 14. DELETE non-existent todo (should return 404)
+DELETE {{baseUrl}}/todos/999
+
+### 15. GET all todos (verify deletion)
+GET {{baseUrl}}/todos
