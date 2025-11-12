@@ -1,0 +1,21 @@
+<Solution>
+    <Folder Name="/05-Containers/">
+        <File Path="modules/module5-containers/build-images.ps1" />
+        <File Path="modules/module5-containers/compare-images.ps1" />
+        <File Path="modules/module5-containers/Dockerfile.net10" />
+        <File Path="modules/module5-containers/Dockerfile.net8" />
+        <File Path="modules/module5-containers/README.md" />
+        <File Path="modules/module5-containers/test-containers.ps1" />
+    </Folder>
+    <Project Path="modules/module1-runtime/01-PricingService.csproj" />
+    <Project Path="modules/module2-aspnetcore/02-PromotionsAPI.csproj" />
+    <Project Path="modules/module3-csharp14/01-extension-members/03-01-ExtensionMembers.csproj" />
+    <Project Path="modules/module3-csharp14/02-field-backed-props/03-02-FieldProps.csproj" />
+    <Project Path="modules/module3-csharp14/03-partial-constructors/03-03-PartialCtors.csproj" />
+    <Project Path="modules/module3-csharp14/04-compound-operators/03-04-CompoundOps.csproj" />
+    <Project Path="modules/module3-csharp14/05-span-conversions/03-05-SpanConv.csproj" />
+    <Project Path="modules/module3-csharp14/06-nameof-generics/03-06-NameofGen.csproj" />
+    <Project Path="modules/module4-efcore/NET8/04-Net8-ProductCatalog.csproj" />
+    <Project Path="modules/module4-efcore/NET10/04-Net10-ProductCatalog.csproj" />
+    <Project Path="modules/module6-serversentevents/06-ServerSentEvents.csproj" />
+</Solution>

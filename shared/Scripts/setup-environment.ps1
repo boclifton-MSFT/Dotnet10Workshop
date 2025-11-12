@@ -69,7 +69,6 @@ Write-Host "Step 3: Verifying folder structure..." -ForegroundColor Cyan
 $repoRoot = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
 $requiredFolders = @(
     "modules",
-    "shared\DomainModels",
     "shared\Scripts",
     "artifacts",
     "docs"
