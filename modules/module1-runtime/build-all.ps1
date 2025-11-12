@@ -3,6 +3,47 @@
 
 $ErrorActionPreference = "Stop"
 
+# Function to initialize Visual Studio environment for Native AOT builds
+function Initialize-VSEnvironment {
+    # Try VS 2026 Insiders first
+    $vsPath = "C:\Program Files\Microsoft Visual Studio\2026\Preview\VC\Auxiliary\Build\vcvars64.bat"
+    if (-not (Test-Path $vsPath)) {
+        $vsPath = "C:\Program Files\Microsoft Visual Studio\2026\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
+    }
+    if (-not (Test-Path $vsPath)) {
+        $vsPath = "C:\Program Files\Microsoft Visual Studio\2026\Professional\VC\Auxiliary\Build\vcvars64.bat"
+    }
+    if (-not (Test-Path $vsPath)) {
+        $vsPath = "C:\Program Files\Microsoft Visual Studio\2026\Community\VC\Auxiliary\Build\vcvars64.bat"
+    }
+    # Fall back to VS 2022
+    if (-not (Test-Path $vsPath)) {
+        $vsPath = "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
+    }
+    if (-not (Test-Path $vsPath)) {
+        $vsPath = "C:\Program Files\Microsoft Visual Studio\2022\Professional\VC\Auxiliary\Build\vcvars64.bat"
+    }
+    if (-not (Test-Path $vsPath)) {
+        $vsPath = "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat"
+    }
+    
+    if (Test-Path $vsPath) {
+        Write-Host "Initializing Visual Studio environment for Native AOT..." -ForegroundColor Yellow
+        Write-Host "  Using: $vsPath" -ForegroundColor Gray
+        $tempFile = [System.IO.Path]::GetTempFileName()
+        cmd /c "`"$vsPath`" && set" > $tempFile
+        Get-Content $tempFile | ForEach-Object {
+            if ($_ -match '^([^=]+)=(.*)$') {
+                [System.Environment]::SetEnvironmentVariable($matches[1], $matches[2], [System.EnvironmentVariableTarget]::Process)
+            }
+        }
+        Remove-Item $tempFile
+        Write-Host "✅ Visual Studio environment initialized" -ForegroundColor Green
+        return $true
+    }
+    return $false
+}
+
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host "Building PricingService (All Variants)" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
@@ -19,6 +60,9 @@ Write-Host "✅ Restore completed" -ForegroundColor Green
 Write-Host ""
 
 # Define build configurations
+# Set $skipAot = $true to skip Native AOT builds if Windows SDK is not installed
+$skipAot = $false  # Change to $true to skip AOT builds
+
 $builds = @(
     @{
         Name = ".NET 8 Framework-Dependent"
@@ -46,10 +90,25 @@ $builds = @(
     }
 )
 
+# Filter out AOT builds if requested
+if ($skipAot) {
+    Write-Host "⚠️  Skipping Native AOT builds (Windows SDK required)" -ForegroundColor Yellow
+    $builds = $builds | Where-Object { -not $_.PublishAot }
+    Write-Host ""
+}
+
 foreach ($build in $builds) {
     Write-Host "Building: $($build.Name)" -ForegroundColor Yellow
     Write-Host "  Target: $($build.TargetFramework)" -ForegroundColor Gray
     Write-Host "  Output: $($build.OutputDir)" -ForegroundColor Gray
+    
+    # Initialize VS environment for AOT builds
+    if ($build.PublishAot) {
+        if (-not (Initialize-VSEnvironment)) {
+            Write-Host "  ⚠️  Warning: Could not initialize Visual Studio environment" -ForegroundColor Yellow
+            Write-Host "  Please run this script from 'Developer PowerShell for VS 2022'" -ForegroundColor Yellow
+        }
+    }
     
     # Build command
     $publishArgs = @(

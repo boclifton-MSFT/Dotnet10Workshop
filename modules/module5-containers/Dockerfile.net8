@@ -6,10 +6,12 @@ LABEL description="PromotionsAPI running on .NET 8" \
 WORKDIR /app
 
 # Copy pre-built framework-dependent binary
-COPY ../artifacts/prom8-fx/ .
+COPY artifacts/prom8-fx/ .
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD dotnet PromotionsAPI &1 | grep -q "healthy" || exit 1
+  CMD curl -f http://localhost:8080/health || exit 1
 
-ENTRYPOINT ["./PromotionsAPI"]
+EXPOSE 8080
+
+ENTRYPOINT ["dotnet", "PromotionsAPI.dll"]

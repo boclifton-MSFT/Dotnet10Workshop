@@ -1,0 +1,8 @@
+{
+  "variant": "NET10",
+  "concurrency": 10,
+  "timestamp": "2025-11-11 21:24:51",
+  "raw_output": "unknown long flag '--print-interval'",
+  "duration": 30,
+  "tool": "bombardier"
+}
