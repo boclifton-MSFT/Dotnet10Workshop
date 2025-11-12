@@ -6,6 +6,20 @@ out/
 *.exe
 *.pdb
 
+# Build artifacts
+artifacts/
+**/results/
+
+# IDE
+.vs/
+.vscode/
+
+# Specs and internal docs
+specs/
+.specify/
+*-STATUS.md
+*-TESTING.md
+
 # User-specific files
 *.user
 *.suo
