@@ -197,7 +197,7 @@ if ($warningCount -gt 0 -and $errorCount -eq 0) {
     Write-Host ""
     Write-Host "Optional items missing (workshop can proceed):" -ForegroundColor Cyan
     foreach ($warning in $results.Warnings) {
-        Write-Host "  $([char]0x26A0)  - $warning" -ForegroundColor Yellow  
+        Write-Host " - $warning" -ForegroundColor Yellow  
     }
 }
 
